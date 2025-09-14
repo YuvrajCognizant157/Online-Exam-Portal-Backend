@@ -1,33 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class Question
+namespace Domain.Models
 {
-    public int Qid { get; set; }
+    [Table("Questions")]
+    public class Question
+    {
+        [Key]
+        public int QID { get; set; }
 
-    public int? Tid { get; set; }
+        public int? TID { get; set; }
 
-    public int? Eid { get; set; }
+        public int? EID { get; set; }
 
-    public string? Type { get; set; }
+        [MaxLength(255)]
+        public string? Type { get; set; }
 
-    public string? Question1 { get; set; }
+        public string? QuestionText { get; set; } // renamed from Question to avoid name clash
 
-    public decimal? Marks { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? Marks { get; set; }
 
-    public string? Options { get; set; }
+        public string? Options { get; set; } // NVARCHAR(MAX)
 
-    public string? CorrectOptions { get; set; }
+        public string? CorrectOptions { get; set; } // NVARCHAR(MAX)
 
-    public int? ApprovalStatus { get; set; }
+        public int? ApprovalStatus { get; set; }
 
-    public virtual Exam? EidNavigation { get; set; }
+        [ForeignKey(nameof(TID))]
+        public Topic? Topic { get; set; }
 
-    public virtual ICollection<QuestionReport> QuestionReports { get; set; } = new List<QuestionReport>();
+        [ForeignKey(nameof(EID))]
+        public Exam? Exam { get; set; }
 
-    public virtual ICollection<Response> Responses { get; set; } = new List<Response>();
-
-    public virtual Topic? TidNavigation { get; set; }
+        public ICollection<Response>? Responses { get; set; }
+        public ICollection<QuestionReport>? QuestionReports { get; set; }
+    }
 }

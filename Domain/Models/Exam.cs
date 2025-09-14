@@ -1,43 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class Exam
+namespace Domain.Models
 {
-    public int Eid { get; set; }
 
-    public int? UserId { get; set; }
+    [Table("Exams")]
+    public class Exam
+    {
+        [Key]
+        public int EID { get; set; }
 
-    public string? Tids { get; set; }
+        public int? UserId { get; set; } // Creator/owner
 
-    public int? TotalQuestions { get; set; }
+        /// <summary>
+        /// Original DB stored TIDs as NVARCHAR(MAX) — keep as string for now.
+        /// If you want normalized many-to-many later, convert to join table.
+        /// </summary>
+        public string? TIDs { get; set; }
 
-    public decimal? TotalMarks { get; set; }
+        public int? TotalQuestions { get; set; }
 
-    public decimal? Duration { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? TotalMarks { get; set; }
 
-    public string? Description { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? Duration { get; set; }
 
-    public string? Name { get; set; }
+        public string? Description { get; set; }
 
-    public int? ApprovalStatus { get; set; }
+        [MaxLength(255)]
+        public string? Name { get; set; }
 
-    public int? ApprovedByUserId { get; set; }
+        public int? ApprovalStatus { get; set; }
 
-    public int? DisplayedQuestions { get; set; }
+        public int? ApprovedByUserID { get; set; }
 
-    public string? AdminRemarks { get; set; }
+        public int? DisplayedQuestions { get; set; }
 
-    public virtual User? ApprovedByUser { get; set; }
+        public string? AdminRemarks { get; set; }
 
-    public virtual ICollection<ExamFeedback> ExamFeedbacks { get; set; } = new List<ExamFeedback>();
+        [ForeignKey(nameof(ApprovedByUserID))]
+        public User? ApprovedByUser { get; set; }
 
-    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+        [ForeignKey(nameof(UserId))]
+        public User? Creator { get; set; }
 
-    public virtual ICollection<Response> Responses { get; set; } = new List<Response>();
-
-    public virtual ICollection<Result> Results { get; set; } = new List<Result>();
-
-    public virtual User? User { get; set; }
+        public ICollection<Question>? Questions { get; set; }
+        public ICollection<Response>? Responses { get; set; }
+        public ICollection<Result>? Results { get; set; }
+        public ICollection<ExamFeedback>? ExamFeedbacks { get; set; }
+    }
 }

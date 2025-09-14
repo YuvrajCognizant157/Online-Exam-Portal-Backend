@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class ExamFeedback
+namespace Domain.Models
 {
-    public int Eid { get; set; }
+    [Table("ExamFeedbacks")]
+    public class ExamFeedback
+    {
+        // Composite key EID, UserId configured in DbContext
+        public int EID { get; set; }
+        public int UserId { get; set; }
 
-    public string? Feedback { get; set; }
+        public string? Feedback { get; set; }
 
-    public int UserId { get; set; }
+        [ForeignKey(nameof(EID))]
+        public Exam? Exam { get; set; }
 
-    public virtual Exam EidNavigation { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
+        [ForeignKey(nameof(UserId))]
+        public User? User { get; set; }
+    }
 }

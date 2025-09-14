@@ -1,19 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class Topic
+namespace Domain.Models
 {
-    public int Tid { get; set; }
+    [Table("Topics")]
+    public class Topic
+    {
+        [Key]
+        public int TID { get; set; }
 
-    public string? Subject { get; set; }
+        [MaxLength(255)]
+        public string? Subject { get; set; }
 
-    public int? ApprovalStatus { get; set; }
+        public int? ApprovalStatus { get; set; }
 
-    public int? ApprovedByUserId { get; set; }
+        public int? ApprovedByUserID { get; set; }
 
-    public virtual User? ApprovedByUser { get; set; }
+        [ForeignKey(nameof(ApprovedByUserID))]
+        public User? ApprovedByUser { get; set; }
 
-    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+        public ICollection<Question>? Questions { get; set; }
+    }
 }

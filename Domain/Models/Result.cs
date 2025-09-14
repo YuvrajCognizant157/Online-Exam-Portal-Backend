@@ -1,23 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class Result
+namespace Domain.Models
 {
-    public int UserId { get; set; }
 
-    public int Eid { get; set; }
+    [Table("Results")]
+    public class Result
+    {
+        // Composite key UserId, EID defined in DbContext
+        public int UserId { get; set; }
+        public int EID { get; set; }
 
-    public int? Attempts { get; set; }
+        public int? Attempts { get; set; }
 
-    public decimal? Score { get; set; }
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? Score { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
-    public virtual Exam EidNavigation { get; set; } = null!;
+        [ForeignKey(nameof(UserId))]
+        public User? User { get; set; }
 
-    public virtual User User { get; set; } = null!;
+        [ForeignKey(nameof(EID))]
+        public Exam? Exam { get; set; }
+    }
 }

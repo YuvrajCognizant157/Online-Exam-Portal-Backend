@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class QuestionReport
+namespace Domain.Models
 {
-    public int Qid { get; set; }
+    [Table("QuestionReports")]
+    public class QuestionReport
+    {
+        // Composite key QID, UserId configured in DbContext
+        public int QID { get; set; }
+        public int UserId { get; set; }
 
-    public string? Feedback { get; set; }
+        public string? Feedback { get; set; }
 
-    public int UserId { get; set; }
+        [ForeignKey(nameof(QID))]
+        public Question? Question { get; set; }
 
-    public virtual Question QidNavigation { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
+        [ForeignKey(nameof(UserId))]
+        public User? User { get; set; }
+    }
 }

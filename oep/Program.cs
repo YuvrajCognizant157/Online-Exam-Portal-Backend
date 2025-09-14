@@ -1,8 +1,8 @@
 
 using Domain.Data;
 using Domain.Models;
-using Infrastructure.Repositories.Implementations;
-using Infrastructure.Repositories.Interfaces;
+//using Infrastructure.Repositories.Implementations;
+//using Infrastructure.Repositories.Interfaces;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -22,10 +22,10 @@ namespace oep
 
                 // Add services to the container.
                 builder.Services.AddScoped<TokenService>();
-                builder.Services.AddScoped<IExamRepository, ExamRepository>();
-                builder.Services.AddScoped<IUserRepository, UserRepository>();
-                builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-                builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+                //builder.Services.AddScoped<IExamRepository, ExamRepository>();
+                //builder.Services.AddScoped<IUserRepository, UserRepository>();
+                //builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+                //builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
                 builder.Services.AddDbContext<AppDbContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
                 builder.Services.AddControllers();
@@ -97,13 +97,18 @@ namespace oep
                 var app = builder.Build();
                 //app.UseMiddleware<GlobalExceptionMiddleware>();
                 // Configure the HTTP request pipeline.
-                if (app.Environment.IsDevelopment())
+
+                if (!args.Contains("ef"))
                 {
-                    app.UseSwagger();
-                    app.UseSwaggerUI(options =>
+
+                    if (app.Environment.IsDevelopment())
                     {
-                        options.ConfigObject.TryItOutEnabled = false;
-                    });
+                        app.UseSwagger();
+                        app.UseSwaggerUI(options =>
+                        {
+                            options.ConfigObject.TryItOutEnabled = false;
+                        });
+                    }
                 }
 
                 app.UseHttpsRedirection();

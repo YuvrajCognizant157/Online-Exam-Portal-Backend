@@ -1,43 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Domain.Models;
-
-public partial class User
+namespace Domain.Models
 {
-    public int UserId { get; set; }
 
-    public string? Email { get; set; }
+    [Table("User")]
+    public class User
+    {
+        [Key]
+        public int UserId { get; set; }
 
-    public string? FullName { get; set; }
+        [MaxLength(255)]
+        public string? Email { get; set; }
 
-    public string? Password { get; set; }
+        [MaxLength(255)]
+        public string? FullName { get; set; }
 
-    public DateOnly? Dob { get; set; }
+        [Column("Password")]
+        [MaxLength(255)]
+        public string? Password { get; set; }
 
-    public string? PhoneNo { get; set; }
+        public DateTime? DOB { get; set; }
 
-    public DateOnly? RegistrationDate { get; set; }
+        [MaxLength(255)]
+        public string? PhoneNo { get; set; }
 
-    public string? Role { get; set; }
+        public DateTime? RegistrationDate { get; set; }
 
-    public bool? IsBlocked { get; set; }
+        [Column("Role")]
+        [MaxLength(255)]
+        public string? Role { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+        public bool IsBlocked { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-    public virtual ICollection<Exam> ExamApprovedByUsers { get; set; } = new List<Exam>();
+        public DateTime UpdatedAt { get; set; }
 
-    public virtual ICollection<ExamFeedback> ExamFeedbacks { get; set; } = new List<ExamFeedback>();
-
-    public virtual ICollection<Exam> ExamUsers { get; set; } = new List<Exam>();
-
-    public virtual ICollection<QuestionReport> QuestionReports { get; set; } = new List<QuestionReport>();
-
-    public virtual ICollection<Response> Responses { get; set; } = new List<Response>();
-
-    public virtual ICollection<Result> Results { get; set; } = new List<Result>();
-
-    public virtual ICollection<Topic> Topics { get; set; } = new List<Topic>();
+        // Navigation properties
+        public ICollection<Topic>? TopicsApproved { get; set; }
+        public ICollection<Exam>? ExamsCreated { get; set; }
+        public ICollection<Exam>? ExamsApproved { get; set; }
+        public ICollection<Response>? Responses { get; set; }
+        public ICollection<Result>? Results { get; set; }
+        public ICollection<QuestionReport>? QuestionReports { get; set; }
+        public ICollection<ExamFeedback>? ExamFeedbacks { get; set; }
+    }
 }

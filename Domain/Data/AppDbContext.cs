@@ -35,183 +35,137 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Validation> Validations { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=LTIN487764;User ID=sa;Password=password-1;Initial Catalog=OEP_DB;Encrypt=false;");
+        => optionsBuilder.UseSqlServer("Data Source=LTIN617435;User ID=sa;Password=password-1;Initial Catalog=OEP_DB_V;Encrypt=false;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Exam>(entity =>
-        {
-            entity.HasKey(e => e.Eid).HasName("PK__Exams__C190170BDABF6CFC");
+        base.OnModelCreating(modelBuilder);
 
-            entity.Property(e => e.Eid).HasColumnName("EID");
-            entity.Property(e => e.ApprovedByUserId).HasColumnName("ApprovedByUserID");
-            entity.Property(e => e.Description).IsUnicode(false);
-            entity.Property(e => e.Duration).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .IsUnicode(false);
-            entity.Property(e => e.Tids).HasColumnName("TIDs");
-            entity.Property(e => e.TotalMarks).HasColumnType("decimal(10, 2)");
+        // Table names (already set via [Table], but keep explicit if needed)
+        modelBuilder.Entity<User>().ToTable("User");
+        modelBuilder.Entity<Topic>().ToTable("Topics");
+        modelBuilder.Entity<Exam>().ToTable("Exams");
+        modelBuilder.Entity<Question>().ToTable("Questions");
+        modelBuilder.Entity<Response>().ToTable("Responses");
+        modelBuilder.Entity<Result>().ToTable("Results");
+        modelBuilder.Entity<QuestionReport>().ToTable("QuestionReports");
+        modelBuilder.Entity<ExamFeedback>().ToTable("ExamFeedbacks");
+        modelBuilder.Entity<Validation>().ToTable("Validations");
 
-            entity.HasOne(d => d.ApprovedByUser).WithMany(p => p.ExamApprovedByUsers)
-                .HasForeignKey(d => d.ApprovedByUserId)
-                .HasConstraintName("FK__Exams__ApprovedB__3E52440B");
+        // Composite keys
+        modelBuilder.Entity<Response>()
+            .HasKey(r => new { r.EID, r.QID, r.UserId });
 
-            entity.HasOne(d => d.User).WithMany(p => p.ExamUsers)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__Exams__UserId__3F466844");
-        });
+        modelBuilder.Entity<Result>()
+            .HasKey(r => new { r.UserId, r.EID });
 
-        modelBuilder.Entity<ExamFeedback>(entity =>
-        {
-            entity.HasKey(e => new { e.Eid, e.UserId }).HasName("PK__ExamFeed__10E89BCF3455A0E5");
+        modelBuilder.Entity<QuestionReport>()
+            .HasKey(qr => new { qr.QID, qr.UserId });
 
-            entity.Property(e => e.Eid).HasColumnName("EID");
-            entity.Property(e => e.Feedback).IsUnicode(false);
+        modelBuilder.Entity<ExamFeedback>()
+            .HasKey(ef => new { ef.EID, ef.UserId });
 
-            entity.HasOne(d => d.EidNavigation).WithMany(p => p.ExamFeedbacks)
-                .HasForeignKey(d => d.Eid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ExamFeedbac__EID__5441852A");
+        // Defaults for created/updated timestamps (match SQL GETDATE())
+        modelBuilder.Entity<User>()
+            .Property(u => u.CreatedAt)
+            .HasDefaultValueSql("GETDATE()");
+        modelBuilder.Entity<User>()
+            .Property(u => u.UpdatedAt)
+            .HasDefaultValueSql("GETDATE()");
 
-            entity.HasOne(d => d.User).WithMany(p => p.ExamFeedbacks)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ExamFeedb__UserI__5535A963");
-        });
+        modelBuilder.Entity<Result>()
+            .Property(r => r.CreatedAt)
+            .HasDefaultValueSql("GETDATE()");
+        modelBuilder.Entity<Result>()
+            .Property(r => r.UpdatedAt)
+            .HasDefaultValueSql("GETDATE()");
 
-        modelBuilder.Entity<Question>(entity =>
-        {
-            entity.HasKey(e => e.Qid).HasName("PK__Question__CAB147CBA6E0773D");
+        // Relationships (some are optional by design)
+        modelBuilder.Entity<Topic>()
+            .HasOne(t => t.ApprovedByUser)
+            .WithMany(u => u.TopicsApproved)
+            .HasForeignKey(t => t.ApprovedByUserID)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            entity.Property(e => e.Qid).HasColumnName("QID");
-            entity.Property(e => e.Eid).HasColumnName("EID");
-            entity.Property(e => e.Marks).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.Question1)
-                .HasColumnType("text")
-                .HasColumnName("Question");
-            entity.Property(e => e.Tid).HasColumnName("TID");
-            entity.Property(e => e.Type)
-                .HasMaxLength(255)
-                .IsUnicode(false);
+        modelBuilder.Entity<Exam>()
+            .HasOne(e => e.ApprovedByUser)
+            .WithMany(u => u.ExamsApproved)
+            .HasForeignKey(e => e.ApprovedByUserID)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(d => d.EidNavigation).WithMany(p => p.Questions)
-                .HasForeignKey(d => d.Eid)
-                .HasConstraintName("FK__Questions__EID__4316F928");
+        modelBuilder.Entity<Exam>()
+            .HasOne(e => e.Creator)
+            .WithMany(u => u.ExamsCreated)
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(d => d.TidNavigation).WithMany(p => p.Questions)
-                .HasForeignKey(d => d.Tid)
-                .HasConstraintName("FK__Questions__TID__4222D4EF");
-        });
+        modelBuilder.Entity<Question>()
+            .HasOne(q => q.Topic)
+            .WithMany(t => t.Questions)
+            .HasForeignKey(q => q.TID)
+            .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<QuestionReport>(entity =>
-        {
-            entity.HasKey(e => new { e.Qid, e.UserId }).HasName("PK__Question__1BC9CB0FE183D78E");
+        modelBuilder.Entity<Question>()
+            .HasOne(q => q.Exam)
+            .WithMany(e => e.Questions)
+            .HasForeignKey(q => q.EID)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            entity.Property(e => e.Qid).HasColumnName("QID");
+        modelBuilder.Entity<Response>()
+            .HasOne(r => r.Exam)
+            .WithMany(e => e.Responses)
+            .HasForeignKey(r => r.EID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.QidNavigation).WithMany(p => p.QuestionReports)
-                .HasForeignKey(d => d.Qid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__QuestionRep__QID__5070F446");
+        modelBuilder.Entity<Response>()
+            .HasOne(r => r.Question)
+            .WithMany(q => q.Responses)
+            .HasForeignKey(r => r.QID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.User).WithMany(p => p.QuestionReports)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__QuestionR__UserI__5165187F");
-        });
+        modelBuilder.Entity<Response>()
+            .HasOne(r => r.User)
+            .WithMany(u => u.Responses)
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Response>(entity =>
-        {
-            entity.HasKey(e => new { e.Eid, e.Qid, e.UserId }).HasName("PK__Response__202C8BBB445F1788");
+        modelBuilder.Entity<Result>()
+            .HasOne(r => r.User)
+            .WithMany(u => u.Results)
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.Property(e => e.Eid).HasColumnName("EID");
-            entity.Property(e => e.Qid).HasColumnName("QID");
-            entity.Property(e => e.RespScore)
-                .HasColumnType("decimal(10, 2)")
-                .HasColumnName("Resp_Score");
+        modelBuilder.Entity<Result>()
+            .HasOne(r => r.Exam)
+            .WithMany(e => e.Results)
+            .HasForeignKey(r => r.EID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.EidNavigation).WithMany(p => p.Responses)
-                .HasForeignKey(d => d.Eid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Responses__EID__45F365D3");
+        modelBuilder.Entity<QuestionReport>()
+            .HasOne(qr => qr.Question)
+            .WithMany(q => q.QuestionReports)
+            .HasForeignKey(qr => qr.QID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.QidNavigation).WithMany(p => p.Responses)
-                .HasForeignKey(d => d.Qid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Responses__QID__46E78A0C");
+        modelBuilder.Entity<QuestionReport>()
+            .HasOne(qr => qr.User)
+            .WithMany(u => u.QuestionReports)
+            .HasForeignKey(qr => qr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.User).WithMany(p => p.Responses)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Responses__UserI__47DBAE45");
-        });
+        modelBuilder.Entity<ExamFeedback>()
+            .HasOne(ef => ef.Exam)
+            .WithMany(e => e.ExamFeedbacks)
+            .HasForeignKey(ef => ef.EID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Result>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.Eid }).HasName("PK__Results__BB91CD3C694FFCF9");
+        modelBuilder.Entity<ExamFeedback>()
+            .HasOne(ef => ef.User)
+            .WithMany(u => u.ExamFeedbacks)
+            .HasForeignKey(ef => ef.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.Property(e => e.Eid).HasColumnName("EID");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Score).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.EidNavigation).WithMany(p => p.Results)
-                .HasForeignKey(d => d.Eid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Results__EID__4D94879B");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Results)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Results__UserId__4CA06362");
-        });
-
-        modelBuilder.Entity<Topic>(entity =>
-        {
-            entity.HasKey(e => e.Tid).HasName("PK__Topics__C456D729B957C774");
-
-            entity.Property(e => e.Tid).HasColumnName("TID");
-            entity.Property(e => e.ApprovedByUserId).HasColumnName("ApprovedByUserID");
-            entity.Property(e => e.Subject).HasMaxLength(255);
-
-            entity.HasOne(d => d.ApprovedByUser).WithMany(p => p.Topics)
-                .HasForeignKey(d => d.ApprovedByUserId)
-                .HasConstraintName("FK__Topics__Approved__3B75D760");
-        });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.UserId).HasName("PK__User__1788CC4C3A0AFC92");
-
-            entity.ToTable("User");
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Dob).HasColumnName("DOB");
-            entity.Property(e => e.Email).HasMaxLength(255);
-            entity.Property(e => e.FullName).HasMaxLength(255);
-            entity.Property(e => e.Password).HasMaxLength(255);
-            entity.Property(e => e.PhoneNo).HasMaxLength(255);
-            entity.Property(e => e.Role).HasMaxLength(255);
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<Validation>(entity =>
-        {
-            entity.HasNoKey();
-        });
-
-        OnModelCreatingPartial(modelBuilder);
+        // Validation.Token is primary key via DataAnnotation [Key]
+        // Column types for decimal already set via attributes in model classes where appropriate
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

@@ -91,6 +91,7 @@ namespace Infrastructure.Repositories.Implementations
         {
 
             return await _context.Users
+                .Where(u=>u.Role!="Admin")
 
                 .Select(u => new User
 

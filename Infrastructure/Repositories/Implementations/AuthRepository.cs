@@ -1,14 +1,10 @@
 ﻿using Domain.Data;
 using Domain.Models;
 using Infrastructure.DTOs.AuthDTOs;
+using Infrastructure.DTOs.UserDTOs;
 using Infrastructure.Repositories.Interfaces;
 using Infrastructure.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Serilog.Core;
-using System.Security.Claims;
-using static System.Net.WebRequestMethods;
 
 
 namespace Infrastructure.Repositories.Implementations
@@ -18,13 +14,17 @@ namespace Infrastructure.Repositories.Implementations
         private readonly AppDbContext _context;
 
         private readonly EmailService _emailService;
-
+        private readonly PasswordHashingService passwordHashing;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<AuthRepository> _logger;
-        public AuthRepository(AppDbContext context, ILogger<AuthRepository> logger, EmailService emailService)
+
+        public AuthRepository(IUserRepository userRepository, AppDbContext context, ILogger<AuthRepository> logger, EmailService emailService, PasswordHashingService pH)
         {
+            _userRepository = userRepository;
             _context = context;
             _logger = logger;
             _emailService = emailService;
+            passwordHashing = pH;
         }
 
         public int RegisterAdminOrExaminer(RegistrationInputDTO examinerDTO, string role)
@@ -44,11 +44,11 @@ namespace Infrastructure.Repositories.Implementations
 
 
 
-                var user = new User
+            var user = new User
             {
                 FullName = examinerDTO.FullName,
                 Email = examinerDTO.Email,
-                Password = examinerDTO.Password,
+                Password = passwordHashing.HashPassword(examinerDTO.Password),
                 Role = role,
                 PhoneNo = examinerDTO.PhoneNo,
                 Dob = examinerDTO.Dob,
@@ -68,7 +68,7 @@ namespace Infrastructure.Repositories.Implementations
             {
                 FullName = dto.FullName,
                 Email = dto.Email,
-                Password = dto.Password,
+                Password = passwordHashing.HashPassword(dto.Password),
                 Role = "Student",
                 PhoneNo = dto.PhoneNo,
                 Dob = dto.Dob,
@@ -139,7 +139,14 @@ namespace Infrastructure.Repositories.Implementations
         }
         public User? Login(string email, string password)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Email == email && u.Password == password);
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == email);
+            var hashedPassword = user.Password;
+
+            if (!passwordHashing.VerifyPassword(password, hashedPassword))
+            {
+               return null;
+            }
 
             if (user?.Otp != null)
             {
@@ -207,6 +214,68 @@ namespace Infrastructure.Repositories.Implementations
                 return new ResendOtpResponseDTO { status = 1, otp = newOtp };
             }
             return new ResendOtpResponseDTO { status = -1, otp = -1 };
+        }
+        public async Task<ResendOtpResponseDTO> RequestOtpForgotPassword(ForgotPasswordRequestDTO request)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return new ResendOtpResponseDTO { status = -1, otp = 0 };
+            }
+
+            Random random = new Random();
+            int otp = random.Next(100000, 999999);
+
+            user.Otp = otp;
+            user.UpdatedAt = DateTime.UtcNow;
+            UpdateUserDTO toBeUpdatedUser = new UpdateUserDTO { FullName = user.FullName, Dob = user.Dob, PhoneNo = user.PhoneNo, Email = user.Email };
+
+            _userRepository.UpdateUser(user.UserId, dto: toBeUpdatedUser);
+
+            if (request.VerifyWithEmail)
+            {
+                string emailSubject = "Verify Your Email";
+                string emailBody = $"Dear {user.FullName},\n\nYour OTP for email verification is: {otp}\n\nThank you!";
+                // Send the real email
+                _emailService.SendSimpleEmail(user.Email, emailSubject, emailBody);
+                return new ResendOtpResponseDTO { status = 1, otp = null };
+            }
+            else
+            {
+                // Log the OTP as requested for testing
+                _logger.LogWarning($"User: {user.Email}, OTP: {otp}");
+                return new ResendOtpResponseDTO { status = 1, otp = otp };
+            }
+        }
+        public async Task<int> ResetPassword(ResetPasswordRequestDto request)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return -1;
+
+            }
+
+            // Check if OTP is valid
+            if (user.Otp == null || user.Otp != request.Otp)
+            {
+                return -2;
+            }
+
+
+
+            // --- CRITICAL SECURITY STEP ---
+            user.Password = passwordHashing.HashPassword(request.NewPassword);
+
+            // Invalidate the OTP after use
+            user.Otp = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+    
+
+            await _userRepository.UpdateUserAsync(user);
+
+            return 1;
         }
     }
 }

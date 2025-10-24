@@ -2,6 +2,7 @@
 using Domain.Models;
 using Infrastructure.DTOs.UserDTOs;
 using Infrastructure.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,6 +108,17 @@ namespace Infrastructure.Repositories.Implementations
 
             _context.Users.Remove(user);
             return _context.SaveChanges();
+        }
+
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
+            return await _context.Users
+                                 .FirstOrDefaultAsync(u => u.Email == email && u.IsBlocked == false);
+        }
+        public async Task<bool> UpdateUserAsync(User user)
+        {
+            _context.Users.Update(user);
+            return await _context.SaveChangesAsync() > 0;
         }
 
 

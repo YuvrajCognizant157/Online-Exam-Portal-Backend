@@ -41,6 +41,7 @@ namespace oep
                 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
                 builder.Services.AddScoped<IJwtDecoderService, TokenService>();
                 builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
+                builder.Services.AddSingleton<PasswordHashingService>();
                 builder.Services.AddDbContext<AppDbContext>(options =>
                     options.UseSqlServer(
                         builder.Configuration.GetConnectionString("DefaultConnection"),

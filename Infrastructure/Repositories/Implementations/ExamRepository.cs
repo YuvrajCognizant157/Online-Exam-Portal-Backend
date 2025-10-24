@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Data;
+using System.Text.RegularExpressions;
 namespace Infrastructure.Repositories.Implementations
 {
     public class ExamRepository : IExamRepository
@@ -53,7 +54,7 @@ namespace Infrastructure.Repositories.Implementations
         {
 
             Exam ToBeUpdatedExam = await _context.Exams.FirstOrDefaultAsync(e => e.Eid == examId);
-            if (ToBeUpdatedExam.SubmittedForApproval == true || ToBeUpdatedExam.ApprovalStatus==1)
+            if (ToBeUpdatedExam.SubmittedForApproval == true || ToBeUpdatedExam.ApprovalStatus == 1)
             {
                 return -1;
             }
@@ -135,7 +136,7 @@ namespace Infrastructure.Repositories.Implementations
         public async Task<ExamWithQuestionsDTO> GetExamByIdForExaminer(int examId)
         {
             var examData = await _context.Exams
-                .Where(e => e.Eid == examId && e.ApprovalStatus != -1)
+                .Where(e => e.Eid == examId && e.ApprovalStatus >= 0)
                 .Select(e => new
                 {
                     e.UserId,
@@ -166,18 +167,27 @@ namespace Infrastructure.Repositories.Implementations
 
             List<int> listids = JsonConvert.DeserializeObject<List<int>>(examData.TidsString);
 
+
+
+            // Fetch topic names
+            var topicNames = await _context.Topics
+                .Where(t => listids.Contains(t.Tid))
+                .Select(t => t.Subject ?? $"Topic {t.Tid}")
+                .ToListAsync();
+
+
             return new ExamWithQuestionsDTO
             {
                 UserId = examData.UserId,
                 Eid = examData.Eid,
-                ExamName = examData.ExamName,
+                Name = examData.ExamName,
                 TotalQuestions = examData.TotalQuestions,
                 approvalStatus = examData.approvalStatus,
                 MarksPerQuestion = examData.MarksPerQuestion,
                 Questions = examData.Questions,
 
-                //Tids = Tids
-                Tids = listids ?? []
+                Tids = listids ?? [],
+                TopicNames = topicNames ?? []
             };
 
 

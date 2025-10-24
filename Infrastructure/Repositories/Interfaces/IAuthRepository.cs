@@ -18,6 +18,8 @@ namespace Infrastructure.Repositories.Interfaces
         bool VerifyOTP(VerifyOtpRequestDTO dto, int otp);
 
         ResendOtpResponseDTO ResendOTP(int userId);
+        Task<ResendOtpResponseDTO> RequestOtpForgotPassword(ForgotPasswordRequestDTO request);
+        Task<int> ResetPassword(ResetPasswordRequestDto request);
 
     }
 }

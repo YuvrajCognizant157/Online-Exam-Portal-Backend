@@ -1,5 +1,6 @@
 ﻿using Domain.Models;
 using Infrastructure.DTOs.AuthDTOs;
+using Infrastructure.DTOs.UserDTOs;
 using Infrastructure.Repositories.Interfaces;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace OEP.Controllers
 {
@@ -19,7 +21,6 @@ namespace OEP.Controllers
     {
         private readonly IAuthRepository _authRepository;
         private readonly TokenService _tokenService;
-
 
 
         public AuthController(IAuthRepository authRepository, TokenService tokenService)
@@ -104,5 +105,45 @@ namespace OEP.Controllers
         }
 
 
+        [HttpPost("request-otp")]
+        public async Task<IActionResult> RequestOtpAction([FromBody] ForgotPasswordRequestDTO request)
+        {
+            ResendOtpResponseDTO data = await _authRepository.RequestOtpForgotPassword(request);
+
+            if (data.status > 0)
+            {
+                return Ok(ApiResponseDto.CreateSuccess("OTP has been processed.", data.otp));
+            }
+            else return NotFound(ApiResponseDto.CreateError("User not found."));
+
+        }
+
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetPasswordAction([FromBody] ResetPasswordRequestDto request)
+        {
+
+            if (request.NewPassword == "" || request.NewPassword == null)
+            {
+                return NotFound(ApiResponseDto.CreateError("New Password was not received"));
+            }
+            int status = await _authRepository.ResetPassword(request);
+            if (status == -2)
+            {
+                return BadRequest(ApiResponseDto.CreateError("Invalid or expired OTP."));
+
+            }
+            else if (status == -1)
+            {
+                return NotFound(ApiResponseDto.CreateError("User not found."));
+            }
+            else if (status == 1)
+            {
+                return Ok(ApiResponseDto.CreateSuccess("Password has been reset successfully.", null));
+            }
+            else
+            {
+                return StatusCode(500, new { Success = false, Message = "Internal Server Error" });
+            }
+        }
     }
 }

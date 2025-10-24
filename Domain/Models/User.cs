@@ -27,7 +27,7 @@ public partial class User
 
     public DateTime? CreatedAt { get; private set; }
 
-    public DateTime? UpdatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; set; }
 
 
     public virtual ICollection<ExamFeedback> ExamFeedbacks { get; set; } = new List<ExamFeedback>();

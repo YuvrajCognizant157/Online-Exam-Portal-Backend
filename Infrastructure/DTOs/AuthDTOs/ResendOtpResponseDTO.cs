@@ -9,6 +9,6 @@ namespace Infrastructure.DTOs.AuthDTOs
     public class ResendOtpResponseDTO
     {
         public int status { get; set; }
-        public int otp { get; set; }
+        public int? otp { get; set; }
     }
 }

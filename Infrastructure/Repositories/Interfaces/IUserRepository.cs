@@ -15,6 +15,7 @@ namespace Infrastructure.Repositories.Interfaces
         List<UserDetailsDTO> GetUsersByRole(string role);
         int UpdateUser(int id, UpdateUserDTO dto);
         int DeleteUser(int id);
-
+        Task<User> GetUserByEmailAsync(string? email);
+        Task<bool> UpdateUserAsync(User user);
     }
 }

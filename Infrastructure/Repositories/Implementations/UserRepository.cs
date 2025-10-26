@@ -30,10 +30,10 @@ namespace Infrastructure.Repositories.Implementations
             {
                 FullName = user.FullName,
                 Email = user.Email,
-                Dob = (DateOnly)user.Dob,
+                Dob = user.Dob,
                 PhoneNo = user.PhoneNo,
                 Role = user.Role,
-                IsBlocked = (bool)user.IsBlocked
+                IsBlocked = user.IsBlocked
             }).ToList();
 
             return userDtos;
@@ -49,6 +49,7 @@ namespace Infrastructure.Repositories.Implementations
             return new UserDetailsDTO
             {
                 FullName = user.FullName,
+                Email = user.Email,
                 Dob = user.Dob.GetValueOrDefault(),
                 IsBlocked = user.IsBlocked.GetValueOrDefault(),
                 PhoneNo = user.PhoneNo,
@@ -60,17 +61,16 @@ namespace Infrastructure.Repositories.Implementations
 
         public List<UserDetailsDTO> GetUsersByRole(string role)
         {
-
             var users = _context.Users.Where(u => u.Role == role).ToList();
 
             var userDtos = users.Select(user => new UserDetailsDTO
             {
                 FullName = user.FullName,
                 Email = user.Email,
-                Dob = (DateOnly)user.Dob,
+                Dob = user.Dob,
                 PhoneNo = user.PhoneNo,
                 Role = user.Role,
-                IsBlocked = (bool)user.IsBlocked
+                IsBlocked = user.IsBlocked
             }).ToList();
 
             return userDtos;

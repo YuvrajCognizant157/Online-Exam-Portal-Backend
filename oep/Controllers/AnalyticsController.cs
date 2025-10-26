@@ -60,5 +60,17 @@ namespace OEP.Controllers
         {
             return await analyticsRepository.GetTotalActiveQuestions();
         }
+
+        [HttpGet("topic-wise-questions-attempted/{userId}")]
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult<List<TopicWiseQuestionsAttempted>>> GetTopicWiseQuestionsAttemptedAction(int userId)
+        {
+            var topicWiseData = await analyticsRepository.GetTopicWIseQuestionAttempted(userId);
+            if (topicWiseData != null && topicWiseData.Count > 0)
+            {
+                return Ok(topicWiseData);
+            }
+            else return Ok("No Data available for the given User ID");
+        }
     }
 }

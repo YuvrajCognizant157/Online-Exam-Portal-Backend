@@ -19,5 +19,7 @@ namespace Infrastructure.Repositories.Interfaces
         public Task<int> GetTotalActiveExams();
 
         public Task<int> GetTotalActiveQuestions();
+
+        public Task<List<TopicWiseQuestionsAttempted>> GetTopicWIseQuestionAttempted(int userId);
     }
 }

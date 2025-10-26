@@ -130,7 +130,7 @@ namespace Infrastructure.Repositories.Implementations
         }
         public async Task<List<Exam>> GetExamsForExaminer(int userid)
         {
-            var examdata = await _context.Exams.Where(e => e.UserId == userid && e.ApprovalStatus != -1).ToListAsync();
+            var examdata = await _context.Exams.Include(e => e.Questions).Where(e => e.UserId == userid && e.ApprovalStatus != -1).ToListAsync();
             return examdata;
         }
         public async Task<ExamWithQuestionsDTO> GetExamByIdForExaminer(int examId)

@@ -48,6 +48,16 @@ namespace OEP.Controllers
             var feedbacks = _repository.GetStudentFeedback(examId, userId);
             return Ok(feedbacks);
         }
+
+        [HttpGet("all-exam-feedbacks-s/{userId}")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetFeedbacksByUser(int userId)
+        {
+            var feedbacks = await _repository.GetAllAttemptedExamFeedback(userId);
+            return Ok(feedbacks);
+        }
+
+
     }
 
 }

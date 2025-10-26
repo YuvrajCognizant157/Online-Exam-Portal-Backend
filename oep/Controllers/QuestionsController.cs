@@ -111,12 +111,12 @@ namespace OEP.Controllers
 
         [Authorize(Roles = "Examiner")]
         [HttpGet("get-questions-by-uid/{uid}")]
-        public async Task<IActionResult> GetQuestionsByUserId(int uid,[FromQuery] int page = 1,[FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetQuestionsByUserId(int uid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            
+
             var (questions, totalCount) = await _questionRepository.GetQuestionsByExaminerID(uid, page, pageSize);
 
-          
+
             if (questions == null)
                 return StatusCode(500, "An error occurred while retrieving questions.");
 
@@ -158,6 +158,25 @@ namespace OEP.Controllers
 
             var result = await _questionRepository.DeleteQuestion(qId);
             return result > 0 ? Ok("Question deleted successfully") : StatusCode(500, "Failed to delete question");
+        }
+
+        [Authorize(Roles = "Examiner")]
+        [HttpPost("import-excel")]
+        [RequestSizeLimit(50_000_000)] // allow up to ~50 MB, adjust as needed
+        public async Task<IActionResult> ImportFromExcel([FromForm] UploadQuestionsDto dto)
+        {
+            if (dto == null || dto.File == null)
+                return BadRequest(new { message = "No file provided." });
+
+            var res = await _questionRepository.ImportQuestionsFromExcelAsync(dto.File, dto.Eid);
+
+            if (res.Errors.Any(e => e.RowNumber == 0 && e.Message.StartsWith("Failed to save to DB")))
+            {
+                // something fatal happened when saving
+                return StatusCode(500, res);
+            }
+
+            return Ok(res);
         }
     }
 }

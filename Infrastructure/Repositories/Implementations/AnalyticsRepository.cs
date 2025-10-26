@@ -201,6 +201,23 @@ namespace Infrastructure.Repositories.Implementations
             return dto != null ? dto : new ExaminerAnalyticsDto();
         }
 
+        public async Task<List<TopicWiseQuestionsAttempted>> GetTopicWIseQuestionAttempted(int userId)
+        {
+            var topicWiseAttempts = await _context.Responses
+                .Include(r => r.QidNavigation)
+                .ThenInclude(q => q.TidNavigation)
+                .Where(r => r.UserId == userId)
+                .GroupBy(r => new { r.QidNavigation.TidNavigation.Tid, r.QidNavigation.TidNavigation.Subject })
+                .Select(g => new TopicWiseQuestionsAttempted
+                {
+                    TopicId = g.Key.Tid,
+                    TopicName = g.Key.Subject,
+                    QuestionsAttempted = g.Select(r => r.Qid).Distinct().Count()
+                })
+                .ToListAsync();
+            return topicWiseAttempts;
+        }
+
 
         public async Task<ActionResult<StudentAnalyticsDTO>> GetStudentAnalytics(int userId)
         {

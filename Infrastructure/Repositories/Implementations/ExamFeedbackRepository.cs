@@ -1,13 +1,14 @@
 ﻿using Domain.Data;
 using Domain.Models;
+using Infrastructure.DTOs.ExamDTOs;
+using Infrastructure.DTOs.ExamFeedbackDTO;
 using Infrastructure.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Infrastructure.DTOs.ExamDTOs;
 
 namespace Infrastructure.Repositories.Implementations
 {
@@ -70,6 +71,31 @@ namespace Infrastructure.Repositories.Implementations
                     Feedback = f.Feedback
                 })
                 .ToList();
+        }
+
+        public async Task<List<ExamFeedbacksList>> GetAllAttemptedExamFeedback(int userId)
+        {
+            if (userId <= 0)
+            {
+                return new List<ExamFeedbacksList>();
+            }
+
+           
+            return await _context.ExamFeedbacks
+               
+                .Where(feedback => feedback.UserId == userId)
+
+         
+                .Include(feedback => feedback.EidNavigation)
+
+                // 4. Project the results into the DTO (ExamFeedbacksList)
+                .Select(feedback => new ExamFeedbacksList
+                {
+                    Eid = feedback.Eid,
+                    FeedbackText = feedback.Feedback,
+                    ExamName = feedback.EidNavigation.Name,
+                })
+                .ToListAsync();
         }
     }
 

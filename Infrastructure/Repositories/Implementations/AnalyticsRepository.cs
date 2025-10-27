@@ -49,15 +49,13 @@ namespace Infrastructure.Repositories.Implementations
         {
             var dto = new ExaminerAnalyticsDto
             {
-                TotalExamsCreated = await _context.Exams.Where(e => e.UserId == examinerId).CountAsync(),
-
                 AverageScoresPerExam = await _context.Results
                     .Where(r => r.EidNavigation.UserId == examinerId)
                     .GroupBy(r => r.Eid)
                     .Select(g => new ExamScoreDto
                     {
                         ExamId = g.Key,
-                        ExamTitle = g.First().EidNavigation.Name, // This is the correct pattern
+                        ExamTitle = g.First().EidNavigation.Name,
                         AverageScore = (double)g.Average(r => r.Score)
                     }).ToListAsync(),
 
@@ -76,7 +74,7 @@ namespace Infrastructure.Repositories.Implementations
                     .Select(g => new ExamParticipationDto
                     {
                         ExamId = g.Key,
-                        ExamTitle = g.First().EidNavigation.Name, // This is the correct pattern
+                        ExamTitle = g.First().EidNavigation.Name,
                         StudentCount = g.Select(r => r.UserId).Distinct().Count()
                     }).ToListAsync(),
 
@@ -159,7 +157,7 @@ namespace Infrastructure.Repositories.Implementations
             };
 
             // --- FIX 5 (Revised) ---
-            // Step 1: Fetch the raw data from SQL without any string manipulation.
+            // Fetch the raw data from SQL without any string manipulation.
             // We select into an anonymous type first.
             var rawQuestionScores = await _context.Responses
                     .Include(r => r.QidNavigation)
@@ -174,7 +172,7 @@ namespace Infrastructure.Repositories.Implementations
                 })
                 .ToListAsync(); // <-- Executes the query, brings data into C# memory
 
-            // Step 2: Now that the data is in memory (a List<>),
+            // Now that the data is in memory (a List<>),
             // perform the string manipulation using C#'s .Length and .Substring (LINQ-to-Objects).
             var allQuestionScores = rawQuestionScores
                 .Select(g => new QuestionPerformanceDto
@@ -197,6 +195,41 @@ namespace Infrastructure.Repositories.Implementations
                 .OrderByDescending(q => q.AverageScore)
                 .Take(5)
                 .ToList();
+
+
+            #region CreatedExamsData
+            var statusCounts = await _context.Exams
+                    .Where(e => e.UserId == examinerId)
+                    .GroupBy(e => new
+                    {
+                        e.ApprovalStatus,
+                        e.SubmittedForApproval
+                    })
+                    .Select(g => new
+                    {
+                        Status =
+                        g.Key.ApprovalStatus == 1 ? "Approved" :
+
+                        g.Key.ApprovalStatus == 0 && g.Key.SubmittedForApproval == true ? "Submitted" :
+
+                        g.Key.ApprovalStatus == 0 ? "Pending" :
+
+                        "Rejected",
+                        Count = g.Count()
+                    })
+                    .ToListAsync();
+            var totalExams = statusCounts.Sum(x => x.Count);
+            var CreatedExamsData = new CreatedExamsStatusDto
+            {
+                TotalExamsCreated = totalExams,
+                ApprovedExams = statusCounts.FirstOrDefault(x => x.Status == "Approved")?.Count ?? 0,
+                SubmittedForApprovalExams = statusCounts.FirstOrDefault(x => x.Status == "Submitted")?.Count ?? 0,
+                RejectedExams = statusCounts.FirstOrDefault(x => x.Status == "Rejected")?.Count ?? 0,
+                PendingExams = statusCounts.FirstOrDefault(x => x.Status == "Pending")?.Count ?? 0
+            };
+
+            dto.ExamsStatusInformation = CreatedExamsData;
+            #endregion
 
             return dto != null ? dto : new ExaminerAnalyticsDto();
         }
@@ -269,11 +302,11 @@ namespace Infrastructure.Repositories.Implementations
                         .CountAsync()
                 },
 
-               
+
 
                 OverallAverageScoreTopicWise = await Task.Run(() =>
                 {
-                   
+
                     var rawAnalyticsData = (
                         from result in _context.Results
                         join exam in _context.Exams on result.Eid equals exam.Eid
@@ -281,18 +314,18 @@ namespace Infrastructure.Repositories.Implementations
                         select new
                         {
                             result.Score,
-                            exam.Tids 
+                            exam.Tids
                         }
-                    ).AsEnumerable(); 
+                    ).AsEnumerable();
                     var topicScores = rawAnalyticsData
                         .SelectMany(x =>
-                        {                            
-                            var topicIds = JsonConvert.DeserializeObject<List<int>>(x.Tids ?? "[]");                             
+                        {
+                            var topicIds = JsonConvert.DeserializeObject<List<int>>(x.Tids ?? "[]");
                             return topicIds.Select(tid => new { Score = x.Score, TopicId = tid });
                         })
-                        .ToList(); 
+                        .ToList();
 
-                   
+
                     var allTopics = _context.Topics.ToList();
 
                     return topicScores

@@ -8,7 +8,7 @@ namespace Infrastructure.DTOs.Analytics
 {
     public class ExaminerAnalyticsDto
     {
-        public int TotalExamsCreated { get; set; }
+        public CreatedExamsStatusDto ExamsStatusInformation { get; set; }
         public List<ExamScoreDto> AverageScoresPerExam { get; set; }
         public List<QuestionApprovalDto> QuestionApprovalStats { get; set; }
         public List<ExamParticipationDto> StudentParticipation { get; set; }
@@ -20,6 +20,14 @@ namespace Infrastructure.DTOs.Analytics
         public List<QuestionPerformanceDto> HardestQuestions { get; set; }
         public List<QuestionPerformanceDto> EasiestQuestions { get; set; }
         public List<ExamPerformanceCorrelationDto> ExamPerformanceCorrelation { get; set; }
+    }
+    public class CreatedExamsStatusDto
+    {
+        public int TotalExamsCreated { get; set; }
+        public int ApprovedExams { get; set; }
+        public int SubmittedForApprovalExams { get; set; }
+        public int RejectedExams { get; set; }
+        public int PendingExams { get; set; }
     }
     public class ExamScoreDto
     {

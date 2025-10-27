@@ -17,6 +17,9 @@ namespace Infrastructure.DTOs.ExamDTOs
         public List<string> TopicNames { get; set; }
         public int MarksPerQuestion { get; set; }
         public int? UserId { get; set; }
+        public string? description { get; set; }
+        public decimal? duration { get; set; }
+        public int? displayedQuestions { get; set; }
     }
 
     public class QuestionDTO

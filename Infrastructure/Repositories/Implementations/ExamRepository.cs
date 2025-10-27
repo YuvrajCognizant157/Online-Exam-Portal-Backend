@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Data;
+using System.Net;
 using System.Text.RegularExpressions;
 namespace Infrastructure.Repositories.Implementations
 {
@@ -136,7 +137,7 @@ namespace Infrastructure.Repositories.Implementations
         public async Task<ExamWithQuestionsDTO> GetExamByIdForExaminer(int examId)
         {
             var examData = await _context.Exams
-                .Where(e => e.Eid == examId && e.ApprovalStatus >= 0)
+                .Where(e => e.Eid == examId)
                 .Select(e => new
                 {
                     e.UserId,
@@ -146,6 +147,9 @@ namespace Infrastructure.Repositories.Implementations
                     approvalStatus = e.ApprovalStatus,
                     MarksPerQuestion = e.MarksPerQuestion ?? 0,
                     TidsString = e.Tids,
+                    description = e.Description,
+                    duration = e.Duration,
+                    displayedQs = e.DisplayedQuestions,
                     Questions = e.Questions.Select(q => new QuestionDTO
                     {
                         Qid = q.Qid,
@@ -184,6 +188,9 @@ namespace Infrastructure.Repositories.Implementations
                 TotalQuestions = examData.TotalQuestions,
                 approvalStatus = examData.approvalStatus,
                 MarksPerQuestion = examData.MarksPerQuestion,
+                description = examData.description,
+                duration = examData.duration,
+                displayedQuestions = examData.displayedQs,
                 Questions = examData.Questions,
 
                 Tids = listids ?? [],
@@ -348,7 +355,7 @@ namespace Infrastructure.Repositories.Implementations
                         Eid = submittedData.EID,
                         Qid = responseDto.Qid,
                         UserId = submittedData.UserId,
-                        Resp = JsonConvert.SerializeObject(responseDto.Resp),
+                        Resp = responseDto.Resp != null || responseDto.Resp.Count == 0 ? JsonConvert.SerializeObject(responseDto.Resp) : "",
                         RespScore = 0,
                         IsSubmittedFresh = true
                     };
@@ -362,8 +369,6 @@ namespace Infrastructure.Repositories.Implementations
                     existingResponse.RespScore = null;
 
                 }
-
-
             }
 
             int status = await _context.SaveChangesAsync();

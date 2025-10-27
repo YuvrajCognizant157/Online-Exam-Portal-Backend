@@ -30,8 +30,6 @@ namespace Infrastructure.Repositories.Implementations
         public int RegisterAdminOrExaminer(RegistrationInputDTO examinerDTO, string role)
         {
 
-
-
             bool emailExists = _context.Users.Any(u => u.Email == examinerDTO.Email);
             bool phoneExists = _context.Users.Any(u => u.PhoneNo == examinerDTO.PhoneNo);
 
@@ -55,6 +53,17 @@ namespace Infrastructure.Repositories.Implementations
             };
 
             _context.Users.Add(user);
+
+            // Remove the validation token row if a token was provided
+            if (!string.IsNullOrWhiteSpace(examinerDTO.Token))
+            {
+                var validation = _context.Validations.FirstOrDefault(v => v.Token == examinerDTO.Token);
+                if (validation != null)
+                {
+                    _context.Validations.Remove(validation);
+                }
+            }
+
             _logger.LogInformation("New Admin/Examiner is registered with UserId : {@userid} at {@time}", user.UserId, user.CreatedAt);
             return _context.SaveChanges();
         }

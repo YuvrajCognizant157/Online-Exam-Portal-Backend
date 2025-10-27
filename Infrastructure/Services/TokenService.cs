@@ -99,5 +99,57 @@ namespace Infrastructure.Services
                 return null;
             }
         }
+
+        public bool VerifyEmailFromToken(string token, string enteredEmail)
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            // 1. Basic token check
+            if (!handler.CanReadToken(token))
+            {
+                return false;
+            }
+
+            var jwtSettings = _configuration.GetSection("Jwt");
+            // Ensure you handle potential null reference if 'Secret' isn't configured
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
+
+            // 2. Token Validation Parameters (Identical to the original function)
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = key
+            };
+
+            try
+            {
+                // 3. Validate the token and get the claims principal
+                var principal = handler.ValidateToken(token, tokenValidationParameters, out _);
+
+                // 4. Extract the email claim
+                // ClaimTypes.Email is the standard claim type for email
+                var emailClaim = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+
+                // 5. Compare the extracted email with the entered email
+                if (emailClaim?.Value != null)
+                {
+                    // Use String.Equals for a safe and robust comparison
+                    return emailClaim.Value.Equals(enteredEmail, StringComparison.OrdinalIgnoreCase);
+                }
+
+                // No email claim found in the token
+                return false;
+            }
+            catch (Exception)
+            {
+                // If validation fails (e.g., token expired, invalid signature), return false
+                return false;
+            }
+        }
     }
 }

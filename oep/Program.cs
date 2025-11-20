@@ -134,6 +134,9 @@ namespace oep
                         policy.WithOrigins("http://localhost:4200")
                               .AllowAnyHeader()
                               .AllowAnyMethod();
+                        policy.WithOrigins("https://front-online-exam-portal.netlify.app")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
                     });
                 });
 
